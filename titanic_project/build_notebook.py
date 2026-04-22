@@ -72,8 +72,14 @@ FIG.mkdir(exist_ok=True)
 plt.style.use("seaborn-v0_8-whitegrid")
 PALETTE = ["#e74c3c", "#2ecc71"]
 sns.set_palette(PALETTE)
-plt.rcParams.update({"figure.dpi": 110, "savefig.dpi": 300,
-                     "savefig.bbox": "tight", "font.family": "DejaVu Sans"})
+plt.rcParams.update({
+    "figure.dpi": 110, "savefig.dpi": 300, "savefig.bbox": "tight",
+    "font.family": "DejaVu Sans",
+    "font.size": 13, "axes.titlesize": 15, "axes.titleweight": "bold",
+    "axes.labelsize": 13, "xtick.labelsize": 11, "ytick.labelsize": 11,
+    "legend.fontsize": 11,
+    "axes.spines.top": False, "axes.spines.right": False,
+})
 print("Environment ready.")""")
 
 code(r"""# Primary source: GitHub mirror (Kaggle train.csv with 891 labelled rows).
@@ -101,9 +107,30 @@ We inspect missingness, class balance, variable types, and basic
 distributions before deciding on a preprocessing strategy.
 """)
 
-code(r"""missing = df.isna().sum()
-profile = pd.DataFrame({"missing": missing, "missing_pct": (missing / len(df) * 100).round(2)})
-profile[profile.missing > 0]""")
+code(r"""# Full profile: missingness, cardinality, dtype
+profile = pd.DataFrame({
+    "missing":     df.isna().sum(),
+    "missing_pct": (df.isna().sum() / len(df) * 100).round(2),
+    "nunique":     df.nunique(),
+    "dtype":       df.dtypes.astype(str),
+})
+profile""")
+
+code(r"""# Age missingness by Pclass — MAR pattern check
+(df.assign(age_missing=df["Age"].isna())
+   .groupby("Pclass")["age_missing"].mean().round(4))""")
+
+code(r"""# Numeric distribution shape (skewness & kurtosis)
+num_cols = ["Age", "Fare", "SibSp", "Parch"]
+pd.DataFrame({c: {
+    "mean":   df[c].mean(),
+    "median": df[c].median(),
+    "std":    df[c].std(),
+    "skew":   df[c].skew(),
+    "kurt":   df[c].kurtosis(),
+    "min":    df[c].min(),
+    "max":    df[c].max(),
+} for c in num_cols}).T.round(3)""")
 
 code(r"""# Target class balance
 class_counts = df["Survived"].value_counts().sort_index()
@@ -132,7 +159,42 @@ md("""**Observations**
 - `Age` (20% missing) and `Cabin` (77% missing) require deliberate handling.
 - Female and first-class survival rates are dramatically higher than their counterparts,
   matching the historical "women and children first" protocol.
+- `Age` missingness varies sharply by class (13.9% / 6.0% / 27.7% for 1/2/3) — a
+  MAR pattern that motivates *group-wise* rather than global imputation.
+- `Fare` is heavily right-skewed (skew≈4.8, kurtosis≈33) due to the handful of
+  first-class tickets above £500.  Tree models handle this fine; for NB/LR we
+  standardise after encoding.
 """)
+
+md("""### 2.1 Association tests
+
+Chi-squared tests on categorical predictors and Mann-Whitney on continuous ones give
+numeric backing to the visual EDA that follows.
+""")
+
+code(r"""from scipy import stats as scistats
+
+# Chi-squared: Sex vs Survived
+ct = pd.crosstab(df["Sex"], df["Survived"])
+chi2, p, dof, _ = scistats.chi2_contingency(ct)
+print(f'Sex      vs Survived: chi2={chi2:7.2f}  df={dof}  p={p:.3e}')
+
+# Chi-squared: Pclass vs Survived
+ct = pd.crosstab(df["Pclass"], df["Survived"])
+chi2, p, dof, _ = scistats.chi2_contingency(ct)
+print(f'Pclass   vs Survived: chi2={chi2:7.2f}  df={dof}  p={p:.3e}')
+
+# Chi-squared: Embarked vs Survived
+ct = pd.crosstab(df["Embarked"].fillna("S"), df["Survived"])
+chi2, p, dof, _ = scistats.chi2_contingency(ct)
+print(f'Embarked vs Survived: chi2={chi2:7.2f}  df={dof}  p={p:.3e}')
+
+# Mann-Whitney U: children (<13) vs adults (>=13) survival
+child = df.loc[df["Age"] < 13,  "Survived"]
+adult = df.loc[df["Age"] >= 13, "Survived"]
+u, p = scistats.mannwhitneyu(child, adult, alternative="greater")
+print(f'\\nChild vs Adult survival  ({child.mean():.1%} vs {adult.mean():.1%}):'
+      f'  U={u:.0f}  p={p:.3e}')""")
 
 # ---------------------------------------------------------------------------
 # 3. Cleaning

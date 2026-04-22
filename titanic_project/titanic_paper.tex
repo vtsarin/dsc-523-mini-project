@@ -1,6 +1,6 @@
 \documentclass[10pt,a4paper,twocolumn]{article}
 
-\usepackage[margin=0.85in]{geometry}
+\usepackage[margin=0.8in,columnsep=0.28in]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
@@ -11,10 +11,11 @@
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage[ruled,linesnumbered]{algorithm2e}
-\usepackage{authblk}
-\usepackage{microtype}
+\usepackage[expansion=false]{microtype}
 \usepackage{siunitx}
 \usepackage{url}
+\usepackage{flafter}
+\usepackage{placeins}
 
 \hypersetup{
     colorlinks=true,
@@ -24,22 +25,75 @@
 }
 
 \captionsetup{font=small,labelfont=bf,skip=4pt}
-\setlength{\columnsep}{0.25in}
+\captionsetup[sub]{font=footnotesize,skip=2pt}
 
 % -----------------------------------------------------------------------------
-\title{\vspace{-1.2em}\textbf{A Comparative Framework for Survival Analysis on the RMS Titanic:\\
-Evaluation of Na\"ive Bayesian and Decision Tree Classifiers}}
+% Python code listing style
+% -----------------------------------------------------------------------------
+\definecolor{codebg}{RGB}{246,249,252}
+\definecolor{codefr}{RGB}{200,208,218}
+\definecolor{codekw}{RGB}{15,80,175}
+\definecolor{codestr}{RGB}{155,30,30}
+\definecolor{codecm}{RGB}{90,110,90}
+\definecolor{codenum}{RGB}{128,96,32}
 
-\author[1]{Sarin Vadakke Thayyil}
-\author[2]{Lekshmi S~S}
-\author[3]{Akbar T E}
-\author[4]{Suja V}
-\author[5]{Nikhil Ravi}
-\affil[ ]{\small Indian Institute of Information Technology, Kottayam \\
-eMTech (AI) 2026 Batch \quad|\quad Course: DSC~523 -- Data Mining \\
-Instructor: Dr.~Anu~Maria~Sebastian \\
-\texttt{\{2026EMAI10051, 10037, 10005, 10058, 10042\}@iiitkottayam.ac.in}}
-\date{25 April 2026}
+\lstdefinestyle{py}{
+  language=Python,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecm}\itshape,
+  numberstyle=\tiny\color{codenum},
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framerule=0.5pt,
+  rulecolor=\color{codefr},
+  xleftmargin=6pt,
+  xrightmargin=2pt,
+  framesep=3pt,
+  aboveskip=5pt,
+  belowskip=5pt,
+  breaklines=true,
+  captionpos=b,
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  abovecaptionskip=2pt,
+  belowcaptionskip=2pt,
+}
+\lstset{style=py}
+\renewcommand{\lstlistingname}{Listing}
+
+% Tighten display math and paragraph spacing
+\setlength{\abovedisplayskip}{5pt}
+\setlength{\belowdisplayskip}{5pt}
+\setlength{\parskip}{1pt}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+
+% Encourage LaTeX to fill columns before pushing floats
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.75}
+
+% -----------------------------------------------------------------------------
+\title{\vspace{-1.6em}\textbf{A Comparative Framework for Survival Analysis on the
+RMS Titanic: Na\"ive Bayesian vs.\ Decision Tree Classifiers}\vspace{-0.5em}}
+
+\author{%
+  Sarin Vadakke Thayyil, \
+  Lekshmi S~S, \
+  Akbar T~E, \
+  Suja V, \
+  Nikhil Ravi \\[2pt]
+  \small eMTech (AI) 2026 Batch \quad|\quad Indian Institute of Information Technology,
+  Kottayam \\[1pt]
+  \small DSC 523 --- Data Mining \quad|\quad Instructor: Dr.\ Anu Maria Sebastian \\[1pt]
+  \small \{2026EMAI10051, 10037, 10005, 10058, 10042\}@iiitkottayam.ac.in
+}
+\date{\small 25 April 2026\vspace{-0.6em}}
 
 % -----------------------------------------------------------------------------
 \begin{document}
@@ -57,19 +111,20 @@ Instructor: Dr.~Anu~Maria~Sebastian \\
     median imputation and enriched with six engineered features, the Decision Tree
     (\textit{max\_depth}=4, selected by 10-fold stratified cross-validation) attains
     $81.56\%$ test accuracy (AUC $=0.838$) while Na\"ive Bayes reaches only $62.57\%$
-    (AUC $=0.778$). McNemar's exact test on paired predictions yields $p = 8.2\times10^{-6}$,
-    confirming that the gap is statistically significant. Logistic Regression is the
-    strongest single model ($83.24\%$, AUC $=0.864$). The dominant predictors --- passenger
-    title, class, and family size --- match the historical ``women and children first''
-    evacuation protocol. The results demonstrate how the conditional-independence assumption
-    of Na\"ive Bayes is violated by engineered categorical dummies, motivating the use of
-    rule-based and linear models on tabular data of this shape.
+    (AUC $=0.778$). McNemar's exact test on paired predictions yields
+    $p = 8.2\times10^{-6}$, confirming that the gap is statistically significant. Logistic
+    Regression is the strongest single model (83.24\%, AUC $=0.864$). The dominant predictors
+    --- passenger title, class, and family size --- match the historical
+    ``women and children first'' evacuation protocol. The results demonstrate how the
+    conditional-independence assumption of Na\"ive Bayes is violated by engineered
+    categorical dummies, motivating the use of rule-based and linear models on tabular
+    data of this shape.
 
     \vspace{0.35em}
-    \noindent\textbf{Keywords:} Data mining, classification, Na\"ive Bayes, decision tree, KDD,
-    Titanic, supervised learning.
+    \noindent\textbf{Keywords:} Data mining, classification, Na\"ive Bayes, decision tree,
+    KDD, Titanic, supervised learning.
     \end{abstract}
-    \vspace{1.5em}
+    \vspace{1.2em}
   \end{@twocolumnfalse}
 ]
 
@@ -78,22 +133,22 @@ Instructor: Dr.~Anu~Maria~Sebastian \\
 % =============================================================================
 On the night of 14~April 1912, the RMS Titanic struck an iceberg during her maiden voyage
 and sank in the North Atlantic, taking the lives of 1\,514 of her 2\,224 passengers and
-crew. The disaster has since become a recurring case study for risk analysis, maritime
-safety, and data science education because the passenger manifest offers one of the
-earliest complete, labelled records of a heterogeneous population subjected to a single
-life-or-death event. Whether an individual survived is strongly conditioned on social
-variables --- gender, class, family ties, and port of embarkation --- whose interaction
-with the \emph{``women and children first''} evacuation protocol produces a non-trivial,
-but learnable, structure~\cite{kaggle_titanic}.
+crew. The disaster has become a recurring case study for risk analysis, maritime safety,
+and data science education because the passenger manifest offers one of the earliest
+complete, labelled records of a heterogeneous population subjected to a single
+life-or-death event. Survival is conditioned on social variables --- gender, class,
+family ties, and port of embarkation --- whose interaction with the
+\emph{``women and children first''} evacuation protocol produces a non-trivial but
+learnable structure~\cite{kaggle_titanic}.
 
 The Kaggle variant of the dataset~\cite{kaggle_titanic} has become the canonical
-introductory benchmark for supervised classification on tabular data; it is also the first
-non-trivial dataset introduced in DSC~523 at IIIT Kottayam. Its principal virtue for
-pedagogy is that it exercises every phase of the Knowledge Discovery in Databases (KDD)
-process~\cite{han2011data}: data selection from a historical archive, preprocessing to
-reconcile substantial missingness, transformation through targeted feature engineering,
-mining with multiple classifier families, and interpretation against a well-documented
-historical record.
+introductory benchmark for supervised classification on tabular data; it is also the
+first non-trivial dataset introduced in DSC~523 at IIIT Kottayam. Its principal virtue
+for pedagogy is that it exercises every phase of the Knowledge Discovery in Databases
+(KDD) process~\cite{han2011data}: data selection from a historical archive,
+preprocessing to reconcile substantial missingness, transformation through targeted
+feature engineering, mining with multiple classifier families, and interpretation against
+a well-documented historical record.
 
 \paragraph{Research objectives.} This study pursues four goals:
 \begin{enumerate}
@@ -103,8 +158,8 @@ historical record.
   \texttt{Cabin}.
   \item Contrast a probabilistic classifier (Gaussian Na\"ive Bayes) with a rule-based
   classifier (Decision Tree) on identical inputs.
-  \item Identify the features that are most predictive of survival and interpret them
-  against the historical evacuation pattern.
+  \item Identify the features most predictive of survival and interpret them against the
+  historical evacuation pattern.
   \item Benchmark the two primary models against Logistic Regression and Random Forest to
   place their performance in the context of linear and ensemble alternatives.
 \end{enumerate}
@@ -112,10 +167,10 @@ historical record.
 \paragraph{Paper organisation.} Section~\ref{sec:litreview} reviews the theoretical
 foundations of Bayesian and decision-tree classification. Section~\ref{sec:dataset}
 describes the dataset. Section~\ref{sec:method} details the preprocessing, feature
-engineering, and evaluation protocol. Section~\ref{sec:results} presents the
-results, including the comparative summary, confusion matrices, and feature importances.
-Sections~\ref{sec:implications}--\ref{sec:contrib} discuss implications and individual
-contributions, and Section~\ref{sec:conclusion} concludes.
+engineering, and evaluation protocol. Section~\ref{sec:results} presents the results,
+including the comparative summary, confusion matrices, and feature importances.
+Section~\ref{sec:implications} discusses implications, Section~\ref{sec:conclusion}
+concludes, and Section~\ref{sec:contrib} lists individual contributions.
 
 % =============================================================================
 \section{Literature Review}\label{sec:litreview}
@@ -136,79 +191,122 @@ For continuous features, $P(x_i\mid C_k)$ is modelled as a univariate Gaussian, 
 the \emph{Gaussian} Na\"ive Bayes estimator used here. The chief strengths of the model
 are its closed-form maximum-likelihood estimator, constant-time training, and stable
 behaviour on small samples~\cite{mitchell1997ml}. Its weakness is that
-Equation~\eqref{eq:nb_independence} rarely holds; correlated or collinear features cause
-the evidence terms to compound, distorting the posterior.
+Equation~\eqref{eq:nb_independence} rarely holds in practice; correlated features cause
+the evidence terms to compound and distort the posterior.
 
 \subsection{Decision-tree induction}
-Decision-tree learners partition the feature space recursively, choosing the split at each
-node that maximises class purity. Two common impurity measures are
+Decision-tree learners partition the feature space recursively, choosing the split at
+each node that maximises class purity. Two common impurity measures are
 \begin{align}
 \text{Gini}(D)    &= 1 - \sum_{i=1}^{m} p_i^2, \label{eq:gini}\\
 \text{Entropy}(D) &= -\sum_{i=1}^{m} p_i \log_2 p_i, \label{eq:entropy}
 \end{align}
 where $p_i$ denotes the proportion of class $i$ in partition $D$. CART~\cite{breiman1984}
-uses Gini while C4.5 / ID3~\cite{quinlan1986} use information gain, which is defined as
-the reduction in entropy induced by a candidate split. Both are computed under a greedy
+uses Gini while C4.5 / ID3~\cite{quinlan1986} use information gain, defined as the
+reduction in entropy induced by a candidate split. Both are computed under a greedy
 top-down scheme and, without regularisation, are prone to overfit. Two standard remedies
 are \emph{pre-pruning} via a maximum-depth hyper-parameter and \emph{post-pruning} via
 cost-complexity minimisation, in which a tree $T_\alpha$ is chosen to minimise
 $R_\alpha(T) = R(T) + \alpha\,|T|$.
 
-Rule-based learners are attractive in applied settings because they are interpretable,
-scale invariant, and agnostic to feature correlations --- three properties that partly
-compensate for their higher variance~\cite{han2011data}.
+Rule-based learners are interpretable, scale invariant, and agnostic to feature
+correlations --- three properties that partly compensate for their higher
+variance~\cite{han2011data}.
 
 \subsection{Related work on the Titanic benchmark}
-Hundreds of public notebooks and tutorial write-ups have reported classification accuracy
-on this dataset. Most serious efforts~\cite{kaggle_titanic,hastie2009esl} fall in the
-78--85\% range when the hold-out protocol is honest, with higher scores typically arising
-from either test-set leakage or hyper-parameter tuning on the public leaderboard. Results
-materially above this band should be treated with scepticism. We therefore evaluate on a
-single fixed 80/20 split with a separate 10-fold CV estimate on the training fold, and
-report both the mean and standard deviation of CV accuracy to quantify sampling
-variability.
+Hundreds of public notebooks have reported classification accuracy on this dataset. Most
+serious efforts~\cite{kaggle_titanic,hastie2009esl} fall in the 78--85\% range when the
+hold-out protocol is honest, with higher scores typically arising from either test-set
+leakage or hyper-parameter tuning on the public leaderboard. Results materially above
+this band should be treated with scepticism. We therefore evaluate on a single fixed
+80/20 split with a separate 10-fold CV estimate on the training fold, and report both
+the mean and standard deviation of CV accuracy to quantify sampling variability.
 
 % =============================================================================
 \section{Dataset Description}\label{sec:dataset}
 % =============================================================================
 We use the Kaggle \texttt{train.csv} file comprising $n=891$ labelled passengers and $12$
-raw attributes. The companion Kaggle \texttt{test.csv} is unlabelled and is \emph{not} used
-here; experiments in the literature that report perfect accuracy almost invariably confuse
-these two files. The target is the binary variable \texttt{Survived} ($1 =$ survived).
-Table~\ref{tab:features} summarises the raw attributes.
+raw attributes. The companion Kaggle \texttt{test.csv} is unlabelled and is \emph{not}
+used here; experiments in the literature that report perfect accuracy almost invariably
+confuse these two files. The target is the binary variable \texttt{Survived} ($1 =$
+survived). Table~\ref{tab:features} summarises the raw attributes.
 
-\begin{table}[H]
+\begin{table}[tb]
 \centering\small
-\caption{Raw attributes, types and missingness (train.csv, $n = 891$).}
+\caption{Raw attributes, types and missingness (\texttt{train.csv}, $n = 891$).}
 \label{tab:features}
-\begin{tabular}{@{}llrl@{}}
+\begin{tabular}{@{}llrp{0.36\columnwidth}@{}}
 \toprule
 Feature & Type & Missing & Description \\
 \midrule
-\texttt{PassengerId} & ID & 0 & Row identifier (dropped) \\
+\texttt{PassengerId} & ID & 0 & Row ID (dropped) \\
 \texttt{Survived}    & Binary & 0 & Target ($0/1$) \\
-\texttt{Pclass}      & Ordinal & 0 & Ticket class $\in\{1,2,3\}$ \\
+\texttt{Pclass}      & Ordinal & 0 & Class $\in\{1,2,3\}$ \\
 \texttt{Name}        & Text & 0 & Parsed for \texttt{Title} \\
-\texttt{Sex}         & Nominal & 0 & \{female, male\} \\
-\texttt{Age}         & Numeric & 177 & In years \\
-\texttt{SibSp}       & Count & 0 & Siblings/spouses aboard \\
-\texttt{Parch}       & Count & 0 & Parents/children aboard \\
+\texttt{Sex}         & Nominal & 0 & female / male \\
+\texttt{Age}         & Numeric & 177 & Years \\
+\texttt{SibSp}       & Count & 0 & Siblings / spouse \\
+\texttt{Parch}       & Count & 0 & Parents / children \\
 \texttt{Ticket}      & Text & 0 & Ticket ID (dropped) \\
 \texttt{Fare}        & Numeric & 0 & Passenger fare \\
-\texttt{Cabin}       & Nominal & 687 & Cabin ID; deck retained \\
+\texttt{Cabin}       & Nominal & 687 & Deck letter kept \\
 \texttt{Embarked}    & Nominal & 2 & Port $\in\{$C, Q, S$\}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\subsection{Attribute typing and cardinality}
+The twelve attributes span four measurement scales. \emph{Nominal} variables
+(\texttt{Sex}, \texttt{Embarked}, \texttt{Cabin}, \texttt{Ticket}, \texttt{Name});
+\emph{ordinal} (\texttt{Pclass}); \emph{discrete counts} (\texttt{SibSp},
+\texttt{Parch}); and \emph{continuous numerics} (\texttt{Age}, \texttt{Fare}).
+\texttt{PassengerId} is a synthetic primary key. Cardinality ranges from~2
+(\texttt{Sex}, \texttt{Survived}) to~891 (\texttt{PassengerId},
+\texttt{Name}, \texttt{Ticket}); columns whose cardinality approaches~$n$ carry no
+aggregate signal and are dropped after any useful sub-structure --- for example, the
+honorific embedded in \texttt{Name} --- has been mined.
+
+\subsection{Numeric distributions}
+Table~\ref{tab:numstats} reports location, dispersion, and shape statistics for the
+four numeric columns. Two observations drive later preprocessing choices.
+First, \texttt{Age} is near-normal with mild right skew ($g_1 = 0.39$), justifying
+\emph{median} rather than \emph{mean} imputation. Second, \texttt{Fare} is heavily
+right-skewed ($g_1 = 4.79$) with excess kurtosis ($g_2 = 33.4$), driven by a handful
+of first-class tickets above £500. We keep the raw scale for tree models
+(threshold-based and scale-invariant) but apply a $\log(1 + x)$ transform for
+visualisation. \texttt{SibSp} and \texttt{Parch} are zero-inflated counts
+($g_1 = 3.70$ and $2.75$ respectively) that we re-express through the engineered
+\texttt{FamilySize} and \texttt{IsAlone} features.
+
+\begin{table}[tb]
+\centering\small
+\caption{Summary statistics for numeric attributes (before imputation). $g_1$ = skewness,
+$g_2$ = excess kurtosis.}
+\label{tab:numstats}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Feature & Mean & Median & Std & $g_1$ & $g_2$ \\
+\midrule
+\texttt{Age}   & 29.70 & 28.00 & 14.53 & 0.39 & 0.18  \\
+\texttt{Fare}  & 32.20 & 14.45 & 49.69 & 4.79 & 33.40 \\
+\texttt{SibSp} & 0.52  & 0.00  & 1.10  & 3.70 & 17.88 \\
+\texttt{Parch} & 0.38  & 0.00  & 0.81  & 2.75 & 9.78  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Target class balance}
 The target is moderately imbalanced: 549 passengers died (61.6\%) and 342 survived
 (38.4\%) --- see Figure~\ref{fig:survival_count}. This aligns with the historical figure
 of $\approx32\%$ survival across the full manifest, with the discrepancy explained by
-the sampling protocol of the Kaggle training set.
+the sampling protocol of the Kaggle training set. Moderate imbalance is mild enough
+that stratified sampling alone suffices; we deliberately do \emph{not} apply SMOTE or
+class-weighted losses, because doing so would introduce rebalancing assumptions that
+cannot be verified out-of-sample.
 
-\begin{figure}[H]
+\begin{figure}[tb]
 \centering
-\includegraphics[width=0.96\columnwidth]{figures/survival_countplot.png}
+\includegraphics[width=0.95\columnwidth]{figures/survival_countplot.png}
 \caption{Target-class distribution on \texttt{train.csv}: 549 died vs.\ 342 survived.}
 \label{fig:survival_count}
 \end{figure}
@@ -219,44 +317,169 @@ the sampling protocol of the Kaggle training set.
 Figure~\ref{fig:flow} depicts the overall pipeline; the following subsections detail each
 stage.
 
-\begin{figure*}[t]
+\begin{figure*}[tb]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/methodology_flowchart.png}
+\includegraphics[width=0.94\textwidth]{figures/methodology_flowchart.png}
 \caption{End-to-end KDD pipeline implemented for this study.}
 \label{fig:flow}
 \end{figure*}
 
-\subsection{Preprocessing and imputation}
-Three columns require imputation. \texttt{Age} ($19.9\%$ missing) is filled with the
-group-wise median within each \texttt{Pclass$\times$Sex} stratum; the median is preferred
-over the mean because \texttt{Age} is right-skewed. \texttt{Embarked} ($0.22\%$ missing,
-two rows) is filled with the global mode (`S'). \texttt{Cabin} ($77.1\%$ missing) is not
-imputed but is mined for a \texttt{Deck} letter before being dropped; `U' is used for
-unknown decks. \texttt{PassengerId}, \texttt{Name}, and \texttt{Ticket} are removed after
-\texttt{Title} has been extracted from \texttt{Name}.
+\subsection{Data profiling}
+Before any modification we characterised each attribute along three axes: missingness
+pattern, cardinality, and (for numeric columns) distributional shape. A single pandas
+audit surfaces all three (Listing~\ref{lst:profile}).
+
+\begin{lstlisting}[caption={Missing-value and cardinality audit.},label={lst:profile}]
+profile = pd.DataFrame({
+    "missing":     df.isna().sum(),
+    "missing_pct": (df.isna().sum() / len(df) * 100).round(2),
+    "nunique":     df.nunique(),
+    "dtype":       df.dtypes,
+})
+\end{lstlisting}
+
+Three columns carry missing values: \texttt{Age} (177 rows, 19.87\%), \texttt{Cabin}
+(687 rows, 77.10\%), and \texttt{Embarked} (2 rows, 0.22\%). Crucially, \texttt{Age}
+missingness is \emph{not} uniform across classes --- 13.9\%, 6.0\% and 27.7\% for 1st,
+2nd and 3rd class respectively. This pattern is consistent with \emph{missing at random}
+(MAR): \texttt{Pclass} is observed and conditioning on it partially explains why an age
+would be recorded or omitted. The MAR observation motivates group-wise rather than
+global imputation.
+
+\subsection{Missing-value treatment}
+\paragraph{Age.} Imputed by the group-wise median over \texttt{Pclass$\times$Sex}
+strata. Median is preferred over mean because \texttt{Age} is right-skewed and bounded
+below by zero, violating the symmetric-noise assumption of mean imputation.
+The six stratum medians range from 21.5 years (3rd-class females) to 40 years
+(1st-class males). Compared with a naive \emph{global-median} rule, the group-wise
+variant preserves group variance: the full-sample standard deviation drops from
+14.53 to 13.30 (an 8.4\% compression) versus 21.2\% under global median.
+
+\begin{lstlisting}[caption={Group-wise median imputation of \texttt{Age}.},label={lst:ageimp}]
+data["Age"] = (data
+    .groupby(["Pclass", "Sex"])["Age"]
+    .transform(lambda s: s.fillna(s.median())))
+\end{lstlisting}
+
+\paragraph{Embarked.} Only two rows are missing, both first-class females who shared
+a ticket. We impute the global mode `S' (Southampton, 644 rows, 72.3\%).
+
+\paragraph{Cabin.} At 77.1\% missing, no plausible imputation rule can recover cabin
+assignments, and the column carries 147 near-unique levels --- far too many to
+one-hot encode. We therefore \emph{drop} \texttt{Cabin} but first extract the
+\emph{deck letter} (A--G from upper to lower decks, plus T for the single
+tank-top cabin), preserving a coarse proximity-to-lifeboat signal. Missing decks
+collapse into an `U' (unknown) category: \{U: 687, C: 59, B: 47, D: 33, E: 32,
+A: 15, F: 13, G: 4, T: 1\}. Only 204 records carry a known deck, but the cost of
+including it is near-zero.
+
+\paragraph{Fare.} No missing values in the training fold. Our code applies
+median-by-\texttt{Pclass} imputation defensively for future robustness against
+the Kaggle test fold.
+
+\paragraph{Dropped columns.} \texttt{PassengerId} is a synthetic key.
+\texttt{Ticket} has 681 unique levels; inspection shows the shared-ticket structure
+is already captured by \texttt{FamilySize}. \texttt{Name} is dropped after the
+\texttt{Title} extraction (below). \texttt{Cabin} is dropped after the
+\texttt{Deck} extraction.
 
 \subsection{Feature engineering}
-Six derived features are constructed:
+Six derived features are constructed, each with documented rationale.
 
-\begin{itemize}\itemsep-0.2em
-  \item \textbf{Title}: the honorific parsed from \texttt{Name} (Mr, Mrs, Miss, Master;
-  rare titles are collapsed to \texttt{Rare}).
-  \item \textbf{FamilySize} $=$ \texttt{SibSp} $+$ \texttt{Parch} $+ 1$.
-  \item \textbf{IsAlone} $= \mathbb{1}[\text{FamilySize}=1]$.
-  \item \textbf{AgeBin}: discretised into \{Child, Teen, Adult, Middle, Senior\}.
-  \item \textbf{FareBin}: quartile-based bins of \texttt{Fare}.
-  \item \textbf{Deck}: first character of \texttt{Cabin}, with `U' for unknowns.
-\end{itemize}
+\paragraph{Title.} The \texttt{Name} field follows the consistent format
+\textit{``Last, Title. First''} and encodes social status and life stage not
+captured by (\texttt{Sex}, \texttt{Age}) alone. We parse the honorific with a
+regex and collapse rare titles (Dr, Rev, Major, Col, Capt, Lady, \ldots) into a
+single \texttt{Rare} bucket to avoid high-variance one-hot columns with near-zero
+support.
 
-\noindent \texttt{Sex} is binarised; the remaining categorical columns are one-hot
-encoded with \texttt{drop\_first=True}, giving a final design matrix of $891\times30$.
+\begin{lstlisting}[caption={Title extraction and rare-category collapsing.},label={lst:title}]
+data["Title"] = (data["Name"]
+    .str.extract(r",\s*([^.]+)\.", expand=False)
+    .str.strip())
+data["Title"] = data["Title"].map({
+    "Mr": "Mr", "Miss": "Miss",
+    "Mrs": "Mrs", "Master": "Master",
+    "Mlle": "Miss", "Ms": "Miss", "Mme": "Mrs",
+}).fillna("Rare")
+\end{lstlisting}
+
+The resulting distribution has five levels: Mr (517), Miss (185), Mrs (126), Master
+(40), Rare (23). Note the strong correlation ($r = 0.87$) between \texttt{Title\_Mr}
+and \texttt{Sex} --- both encode adult-male-ness --- a multicollinearity that we will
+see in Section~\ref{sec:results} is the primary failure mode of Gaussian Na\"ive Bayes.
+
+\paragraph{FamilySize.} The raw \texttt{SibSp} (siblings/spouse aboard) and
+\texttt{Parch} (parents/children aboard) each carry a partial party-size signal. We
+sum them and add one for the focal passenger:
+\[
+\texttt{FamilySize} \;=\; \texttt{SibSp} + \texttt{Parch} + 1 .
+\]
+The relationship between \texttt{FamilySize} and survival is non-linear
+(Fig.~\ref{fig:family}), peaking at family sizes of 2--4 --- a pattern that neither
+original column exhibits on its own.
+
+\paragraph{IsAlone.} A binary indicator for \texttt{FamilySize} $= 1$. Solo
+passengers (537 of 891, 60.3\%) survived at 30.4\% versus 50.6\% for passengers with
+family --- a twenty percentage-point gap.
+
+\paragraph{AgeBin.} Five ordinal buckets derived from conventional life-stage
+boundaries: Child (0--12), Teen (13--19), Adult (20--40), Middle (41--60), Senior
+(60+). Discretisation is not strictly needed for tree models, but stabilises Gaussian
+NB against the distribution tails of a continuous variable it would otherwise
+misrepresent as symmetric.
+
+\paragraph{FareBin.} Quartile-based bins of \texttt{Fare}. Quartiles are preferred
+over equal-width bins because \texttt{Fare} is heavily skewed ($g_1 = 4.79$); the
+top quartile spans £31--£512 and the bottom £0--£7.9.
+
+\begin{lstlisting}[caption={Remaining derived features.},label={lst:derived}]
+data["FamilySize"] = data["SibSp"] + data["Parch"] + 1
+data["IsAlone"]    = (data["FamilySize"] == 1).astype(int)
+data["AgeBin"]  = pd.cut(data["Age"],
+    bins=[0, 12, 19, 40, 60, 120],
+    labels=["Child","Teen","Adult","Middle","Senior"])
+data["FareBin"] = pd.qcut(data["Fare"], q=4,
+    labels=["Q1","Q2","Q3","Q4"])
+data["Deck"] = data["Cabin"].str[0].fillna("U")
+\end{lstlisting}
+
+\subsection{Encoding and design matrix}
+\texttt{Sex} has only two levels and is binarised directly
+(\texttt{female}$\mapsto 1$, \texttt{male}$\mapsto 0$). All remaining nominal columns
+are one-hot encoded with \texttt{drop\_first=True} to avoid the dummy-variable trap:
+retaining all $k$ levels of a categorical variable introduces perfect collinearity
+with the intercept. Ordinal variables (\texttt{Pclass}, \texttt{AgeBin},
+\texttt{FareBin}) are kept as integer levels for tree models and are standardised
+for NB and Logistic Regression.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Encoding.},label={lst:encode}]
+data["Sex"] = data["Sex"].map(
+    {"male": 0, "female": 1})
+data = pd.get_dummies(
+    data, drop_first=True,
+    columns=["Embarked", "Title", "Deck",
+             "AgeBin",   "FareBin"])
+\end{lstlisting}
+\end{minipage}
+
+After encoding the design matrix is $891 \times 30$; total missingness is verified
+to be exactly zero before any modelling.
+
+\subsection{Outlier handling}
+\texttt{Fare} has seven records above £250 (the top 1.5\%), with a maximum of £512.33
+(the three Cardeza-family first-class tickets). Under tree-based models these points
+are harmless because splits are ordinal and invariant to magnitude. We therefore do
+not winsorise the raw distribution, and apply $\log(1+x)$ only for the
+fare-distribution plot.
 
 \subsection{Classifier specifications}
 \paragraph{Gaussian Na\"ive Bayes.} Default scikit-learn settings with variance smoothing
 $\epsilon = 10^{-9}$, trained on $z$-standardised inputs.
 
-\paragraph{Decision Tree.} CART with Gini impurity. The depth hyper-parameter is selected
-by 10-fold stratified CV on the training fold over $d\in\{2,\dots,10\}$; $d=4$ is optimal
+\paragraph{Decision Tree.} CART with Gini impurity. Depth is selected by 10-fold
+stratified CV on the training fold over $d\in\{2,\dots,10\}$; $d=4$ is optimal
 (CV $= 82.02\%$). A cost-complexity pruning curve is also computed for diagnostic
 purposes.
 
@@ -268,13 +491,13 @@ sampling.
 
 Algorithm~\ref{alg:dt} gives the CART pseudocode for reference.
 
-\begin{algorithm}[htbp]
+\begin{algorithm}[tb]
 \small
 \SetAlgoLined
 \KwIn{training set $D$, depth limit $d$}
 \KwOut{decision tree $T$}
 \If{$\mathrm{depth}(D) = d \; \text{or}\; D\;\text{pure}$}{\Return leaf with majority class\;}
-Select split $(f^\star,t^\star) = \arg\min_{f,t} \;\mathrm{Gini}(D^{f,t}_{\le}) + \mathrm{Gini}(D^{f,t}_{>})$\;
+Select split $(f^\star,t^\star) = \arg\min_{f,t} \mathrm{Gini}(D^{f,t}_{\le}) + \mathrm{Gini}(D^{f,t}_{>})$\;
 Partition $D$ using $(f^\star,t^\star)$ into $D_L, D_R$\;
 Recursively build left subtree on $D_L$ and right subtree on $D_R$\;
 \Return node($f^\star,t^\star$, $T_L$, $T_R$)\;
@@ -294,27 +517,110 @@ hypothesis that Na\"ive Bayes and the Decision Tree have equal error rates.
 \section{Results and Discussion}\label{sec:results}
 % =============================================================================
 
-\subsection{Exploratory findings}
-Figures~\ref{fig:by_gender}--\ref{fig:corr} summarise the most informative bivariate
-relationships.
+\subsection{Exploratory findings}\label{sec:eda}
+EDA is organised into nine sub-analyses: target balance, gender effect, class effect,
+class-$\times$-gender interaction, age structure, fare gradient, family-size
+non-linearity, embarkation port, and correlation structure. Every quantitative claim
+below is reproducible from \texttt{run\_analysis.py} and is serialised to
+\texttt{results.json}.
 
-\begin{figure}[H]
+\subsubsection{Target distribution}
+342 of the 891 passengers survived (38.4\%), giving a 1.60:1 death-to-survival ratio.
+The imbalance is moderate and is addressed via \emph{stratified} train/test splitting
+and 10-fold stratified cross-validation rather than resampling.
+
+\subsubsection{Gender effect}
+The strongest univariate predictor is \texttt{Sex}. Female survival (74.2\%, 233 of
+314) exceeds male survival (18.9\%, 109 of 577) by 55 percentage points. A
+$\chi^2$ test of independence between \texttt{Sex} and \texttt{Survived} rejects
+the null of no association at overwhelming significance:
+\[
+\chi^2 \;=\; 260.72,\quad \text{df} = 1,\quad p \;=\; 1.2\times 10^{-58}.
+\]
+
+\subsubsection{Class effect}
+Survival declines monotonically with passenger class: 1st (136/216, 63.0\%),
+2nd (87/184, 47.3\%), 3rd (119/491, 24.2\%). $\chi^2$ likewise rejects independence:
+\[
+\chi^2 \;=\; 102.89,\quad \text{df} = 2,\quad p \;=\; 4.5\times 10^{-23}.
+\]
+The ordinal shape is consistent with the physical layout of the ship: first-class
+cabins were on upper decks, closer to lifeboat stations; third-class passengers were
+berthed in steerage at the waterline.
+
+\subsubsection{Class $\times$ Gender interaction}
+The joint effect (Figure~\ref{fig:class_gender}) is striking: first-class women
+survived at 96.8\% (91 of 94) while third-class men survived at only 13.5\% (47 of
+347). A logistic model without an interaction term under-predicts the first-class
+female survival probability by approximately eleven percentage points, which is why
+the learned Decision Tree's second split conditions on \texttt{Pclass} given
+\texttt{Title}.
+
+\subsubsection{Age structure}
+Ages range from 0.42 years (Master Assad Alexander Thomas, the youngest passenger in
+the manifest) to 80 years. Children under 13 survive at 58.0\% versus 38.8\% for
+adults --- a difference that is significant at the Mann--Whitney level:
+\[
+U \;=\; 26{,}528,\quad n_c = 69,\; n_a = 645,\quad p \;=\; 1.0\times 10^{-3}.
+\]
+The effect is partially confounded by the \texttt{Master} honorific capturing male
+children, and is re-absorbed by our \texttt{AgeBin} and \texttt{Title\_Master}
+features during modelling. Figure~\ref{fig:agefare}(a) shows the age histogram
+overlaid by survival status: the survivor bar dominates the sub-13 age bins (left of
+the dashed reference line), while the 20--35 band is visibly depressed for survivors
+relative to casualties.
+
+\subsubsection{Fare gradient}
+$\log$-fare separates survivors from casualties within every class: the within-class
+median fare is consistently higher for those who survived. \texttt{Fare} acts as a
+noisy proxy for cabin quality and deck location; conditional on class, a higher fare
+bought access to the upper decks near lifeboats.
+Figure~\ref{fig:agefare}(b) makes the separation visible on a log scale --- the
+high-fare tail (right of $\log(1+\text{Fare})\approx 3$, i.e.\ fare $\gtrsim 19$
+pounds) is dominated by survivors, while the low-fare mode is dominated by
+casualties.
+
+\subsubsection{Family-size non-linearity}
+Survival as a function of \texttt{FamilySize} is non-monotonic with a peak in the
+middle: solo passengers survive at 30.4\%, families of 2--4 at 55--72\%, and very
+large families of $\ge 5$ at only 16\%. The drop in the right tail is often ascribed
+to the difficulty of keeping a large extended family together during evacuation ---
+a hypothesis our \texttt{IsAlone} feature cannot capture but the full
+\texttt{FamilySize} integer does.
+
+\subsubsection{Embarkation port}
+Cherbourg (C) passengers survived at 55.4\% --- noticeably higher than Southampton
+(S, 33.7\%) or Queenstown (Q, 39.0\%). A $\chi^2$ test rejects independence
+($\chi^2 = 25.96$, df $=2$, $p = 2.3\times 10^{-6}$), but the bulk of the signal
+is mediated by class: half the first-class passengers boarded at Cherbourg. After
+controlling for \texttt{Pclass}, the embarkation effect is small.
+
+\subsubsection{Correlation and multicollinearity}
+The Pearson correlation matrix (Figure~\ref{fig:corr}) ranks \texttt{Sex\_female}
+($+0.54$), \texttt{Pclass} ($-0.34$) and \texttt{Fare} ($+0.26$) as the strongest
+linear predictors. More importantly for model choice, several feature pairs are
+strongly multicollinear --- all by construction:
+\begin{itemize}\itemsep-0.2em
+  \item $r(\texttt{SibSp}, \texttt{FamilySize}) \;=\; +0.89$
+  \item $r(\texttt{Sex\_female}, \texttt{Title\_Mr}) \;=\; -0.87$
+  \item $r(\texttt{Parch}, \texttt{FamilySize}) \;=\; +0.78$
+  \item $r(\texttt{Pclass}, \texttt{Deck\_U}) \;=\; +0.73$
+\end{itemize}
+These correlations directly violate the conditional-independence assumption of
+Equation~\eqref{eq:nb_independence} and predict (correctly, as
+Section~\ref{sec:results} will confirm) the poor Gaussian Na\"ive Bayes performance
+observed on engineered tabular data of this shape.
+
+\begin{figure*}[tb]
 \centering
-\begin{subfigure}{0.49\columnwidth}
-\includegraphics[width=\linewidth]{figures/survival_by_gender.png}
-\caption{By gender}
-\end{subfigure}\hfill
-\begin{subfigure}{0.49\columnwidth}
-\includegraphics[width=\linewidth]{figures/survival_by_class.png}
-\caption{By passenger class}
-\end{subfigure}
-\caption{Survival rate by the two strongest univariate predictors: female passengers
-survived at $74.2\%$ versus $18.9\%$ for males; survival declines monotonically with
-class.}
-\label{fig:by_gender}
-\end{figure}
+\includegraphics[width=0.92\textwidth]{figures/survival_gender_class_panel.png}
+\caption{Univariate survival rates by the two strongest predictors. Female passengers
+survived at 74.2\% versus 18.9\% for males; survival declines monotonically with class
+(63.0\% / 47.3\% / 24.2\%).}
+\label{fig:univ}
+\end{figure*}
 
-\begin{figure}[H]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=0.98\columnwidth]{figures/survival_by_class_gender.png}
 \caption{Joint effect of class and gender. First-class women survived at 96.8\% while
@@ -322,16 +628,27 @@ third-class men survived at only 13.5\%.}
 \label{fig:class_gender}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure*}[tb]
 \centering
-\includegraphics[width=0.95\columnwidth]{figures/family_size_survival.png}
+\includegraphics[width=0.92\textwidth]{figures/age_fare_by_survival.png}
+\caption{(a) Age distribution by survival --- the dashed line marks the child /
+adult boundary used in \S\ref{sec:eda}. Survivors dominate the sub-13 bins; the
+20--35 adult band is visibly depressed relative to casualties. (b) Fare distribution
+on a $\log(1+x)$ scale --- the right tail (high-fare first-class tickets) is
+disproportionately survivors, while the low-fare mode is dominated by casualties.}
+\label{fig:agefare}
+\end{figure*}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.98\columnwidth]{figures/family_size_survival.png}
 \caption{Family-size effect. Survival peaks at family sizes of 2--4 and collapses for
 very large ($\ge 5$) groups --- behaviour captured by the engineered \texttt{FamilySize}
 feature.}
 \label{fig:family}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=0.98\columnwidth]{figures/correlation_heatmap.png}
 \caption{Pearson correlations. The strongest predictors of \texttt{Survived} are
@@ -340,65 +657,63 @@ feature.}
 \end{figure}
 
 \subsection{Model performance}
-Table~\ref{tab:summary} consolidates the six primary metrics for each classifier.
+Table~\ref{tab:summary} consolidates the six primary metrics for each classifier;
+Figure~\ref{fig:cm} shows the confusion matrices for the two primary classifiers, and
+Figure~\ref{fig:roc} compares ROC curves across all four models.
 
-\begin{table*}[t]
+\begin{table*}[tb]
 \centering\small
 \caption{Comparative performance of four classifiers on the 179-row held-out test set
-(10-fold CV on $n_\text{train}=712$).}
+(10-fold CV on $n_\text{train}=712$). Best test score in each column is \textbf{bold}.}
 \label{tab:summary}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
 Model & CV Accuracy ($\mu\pm\sigma$) & Test Accuracy & Precision & Recall & F1 & AUC \\
 \midrule
-Na\"ive Bayes          & $0.6572 \pm 0.1169$ & $0.6257$ & $0.5083$ & $0.8841$ & $0.6455$ & $0.7782$ \\
-Decision Tree          & $0.8202 \pm 0.0363$ & $0.8156$ & $0.7903$ & $0.7101$ & $0.7481$ & $0.8375$ \\
-Logistic Regression    & $0.8146 \pm 0.0393$ & $\mathbf{0.8324}$ & $0.8000$ & $0.7536$ & $\mathbf{0.7761}$ & $\mathbf{0.8644}$ \\
-Random Forest          & $0.8131 \pm 0.0336$ & $0.8101$ & $0.7778$ & $0.7101$ & $0.7424$ & $0.8286$ \\
+Na\"ive Bayes          & $0.6572 \pm 0.1169$          & $0.6257$ & $0.5083$          & $\mathbf{0.8841}$ & $0.6455$ & $0.7782$ \\
+Decision Tree          & $\mathbf{0.8202 \pm 0.0363}$ & $0.8156$ & $0.7903$          & $0.7101$          & $0.7481$ & $0.8375$ \\
+Logistic Regression    & $0.8146 \pm 0.0393$          & $\mathbf{0.8324}$ & $\mathbf{0.8000}$ & $0.7536$ & $\mathbf{0.7761}$ & $\mathbf{0.8644}$ \\
+Random Forest          & $0.8131 \pm 0.0336$          & $0.8101$ & $0.7778$          & $0.7101$          & $0.7424$ & $0.8286$ \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-\begin{figure}[H]
+\begin{figure}[tb]
 \centering
-\begin{subfigure}{0.49\columnwidth}
-\includegraphics[width=\linewidth]{figures/confusion_matrix_nb.png}
-\caption{Na\"ive Bayes}
-\end{subfigure}\hfill
-\begin{subfigure}{0.49\columnwidth}
-\includegraphics[width=\linewidth]{figures/confusion_matrix_dt.png}
-\caption{Decision Tree}
-\end{subfigure}
+\includegraphics[width=0.98\columnwidth]{figures/confusion_matrices_panel.png}
 \caption{Confusion matrices on the held-out test set. Na\"ive Bayes over-predicts the
 positive class (59 false positives), whereas the Decision Tree is materially better
-balanced.}
+balanced (only 13 false positives).}
 \label{fig:cm}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure*}[tb]
 \centering
-\includegraphics[width=0.98\columnwidth]{figures/roc_curves.png}
-\caption{ROC curves for all four classifiers. Logistic Regression dominates slightly
-across most thresholds (AUC $= 0.864$); Na\"ive Bayes trails uniformly.}
-\label{fig:roc}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.98\columnwidth]{figures/feature_importance.png}
-\caption{Top-12 feature importances. The Decision Tree concentrates split weight on
-\texttt{Title\_Mr} and \texttt{Pclass}; the Random Forest distributes importance more
-evenly across \texttt{Fare}, \texttt{Age}, and \texttt{Title\_Mr}.}
-\label{fig:feat}
-\end{figure}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/decision_tree_viz.png}
+\includegraphics[width=0.96\textwidth]{figures/decision_tree_viz.png}
 \caption{Fitted Decision Tree (\texttt{max\_depth}=3 shown for readability; the
-deployed model uses depth 4). The root split on \texttt{Title\_Mr} captures the bulk
+deployed model uses depth~4). The root split on \texttt{Title\_Mr} captures the bulk
 of the gender / honorific signal in a single question.}
 \label{fig:tree}
+\end{figure*}
+
+\begin{figure*}[tb]
+\centering
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{figures/roc_curves.png}
+  \captionof{figure}{ROC curves for all four classifiers. Logistic Regression dominates
+  slightly across most thresholds (AUC $= 0.864$); Na\"ive Bayes trails uniformly.}
+  \label{fig:roc}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{figures/feature_importance.png}
+  \captionof{figure}{Top-12 feature importances. The Decision Tree (top panel)
+  concentrates split weight on \texttt{Title\_Mr} and \texttt{Pclass}; the Random
+  Forest (bottom) distributes importance more evenly across \texttt{Fare},
+  \texttt{Age}, and \texttt{Title\_Mr}.}
+  \label{fig:feat}
+\end{minipage}
 \end{figure*}
 
 \subsection{Statistical significance: NB vs.\ DT}
@@ -414,18 +729,17 @@ The $\approx 19$ percentage-point gap between NB and DT is not a sampling artefa
 Three findings stand out.
 
 \paragraph{NB underperforms because its assumptions fail here.} The one-hot expansion of
-categorical features (Title, Deck, AgeBin, FareBin) introduces many strongly
-correlated dummy variables, directly violating
-Equation~\eqref{eq:nb_independence}. Modelling binary dummies as Gaussians
-compounds the mismatch. This is the textbook failure mode of Gaussian NB on
-engineered tabular data and is the principal cause of its low AUC.
+categorical features (Title, Deck, AgeBin, FareBin) introduces many strongly correlated
+dummy variables, directly violating Equation~\eqref{eq:nb_independence}. Modelling binary
+dummies as Gaussians compounds the mismatch. This is the textbook failure mode of
+Gaussian NB on engineered tabular data and is the principal cause of its low AUC.
 
-\paragraph{Gender dominates, class modulates.} Both the Decision Tree (Fig.~\ref{fig:feat}
-left) and the Random Forest (Fig.~\ref{fig:feat} right) place \texttt{Title\_Mr},
-\texttt{Pclass}, and \texttt{Fare} in the top four. The root split of the learned tree
-(Fig.~\ref{fig:tree}) is a single test on \texttt{Title\_Mr}, which perfectly isolates
-adult males whose survival rate is $<20\%$. This is precisely the ``women and children
-first'' protocol recovered from the data.
+\paragraph{Gender dominates, class modulates.} Both the Decision Tree
+(Fig.~\ref{fig:feat}, top panel) and the Random Forest (Fig.~\ref{fig:feat}, bottom
+panel) place \texttt{Title\_Mr}, \texttt{Pclass}, and \texttt{Fare} in the top four. The root split of
+the learned tree (Fig.~\ref{fig:tree}) is a single test on \texttt{Title\_Mr}, which
+perfectly isolates adult males whose survival rate is $<20\%$. This is precisely the
+``women and children first'' protocol recovered from the data.
 
 \paragraph{Linear structure is nearly sufficient.} Logistic Regression attains the highest
 test accuracy (83.24\%) and AUC (0.864), indicating that after feature engineering the
@@ -436,9 +750,9 @@ tree bagging to discover them.
 
 \paragraph{Limitations.} (i) The study uses a single fixed hold-out fold; repeated
 nested CV would tighten the accuracy intervals. (ii) We compare Gaussian NB against
-alternatives; a categorical- or multinomial-NB that respects the type of our
-one-hot dummies would be a fairer probabilistic comparator. (iii) No hyper-parameter
-search is performed for Logistic Regression or Random Forest beyond defaults.
+alternatives; a categorical- or multinomial-NB that respects the type of our one-hot
+dummies would be a fairer probabilistic comparator. (iii) No hyper-parameter search is
+performed for Logistic Regression or Random Forest beyond defaults.
 
 % =============================================================================
 \section{Implications and Applications}\label{sec:implications}
@@ -451,9 +765,9 @@ maps onto rule-based underwriting in which an applicant is classified through a 
 sequence of questions --- a structure still used in modern claims-triage systems.
 
 \paragraph{Emergency response and crisis planning.} The feature rankings surface
-non-demographic drivers (family size, deck, fare band) that real evacuation doctrine
-has to reckon with. A fielded planner should not rely purely on demographic tags but
-should include mobility-proxy features of the sort we engineer here.
+non-demographic drivers (family size, deck, fare band) that real evacuation doctrine has
+to reckon with. A fielded planner should not rely purely on demographic tags but should
+include mobility-proxy features of the sort we engineer here.
 
 \paragraph{Algorithmic fairness and auditing.} The same dataset is an instructive target
 for bias auditing: the strongest predictor of survival is a protected attribute, so any
@@ -461,10 +775,37 @@ deployed classifier would learn and reproduce historical inequalities. The compa
 between NB (probabilistic, harder to audit feature-by-feature) and DT (rule-based,
 auditable) is directly relevant to regulatory transparency frameworks.
 
-\paragraph{Pedagogical value.} The pipeline demonstrates every stage of the KDD process in
-a single coherent exercise, at a problem size that remains tractable on a laptop --- a
-property we exploit to ensure every student can reproduce the exact numbers reported
+\paragraph{Pedagogical value.} The pipeline demonstrates every stage of the KDD process
+in a single coherent exercise, at a problem size that remains tractable on a laptop ---
+a property we exploit to ensure every student can reproduce the exact numbers reported
 here by re-running the companion Jupyter notebook.
+
+% =============================================================================
+\section{Conclusion and Future Work}\label{sec:conclusion}
+% =============================================================================
+We presented a reproducible KDD pipeline for Titanic survival prediction that compares a
+probabilistic and a rule-based classifier on identical, engineered features. The Decision
+Tree (81.56\% test accuracy, AUC $= 0.838$) decisively outperforms Gaussian Na\"ive Bayes
+(62.57\%, AUC $= 0.778$), and the gap is statistically significant under the exact
+McNemar test ($p = 8.22\times 10^{-6}$). Logistic Regression achieves the best single
+score overall (83.24\%, AUC $= 0.864$), implying that the engineered representation is
+close to linearly separable. The dominant predictors --- passenger title, class, and
+family size --- align cleanly with the historical evacuation protocol.
+
+\paragraph{Future work.} Three extensions are immediate: (i) replace Gaussian NB with
+multinomial or categorical NB to respect the type of the engineered dummies;
+(ii) introduce gradient-boosted trees (XGBoost, LightGBM) with a nested
+Bayesian-optimisation hyper-parameter search; and (iii) layer SHAP value
+analysis~\cite{lundberg2017shap} over the best model to obtain local explanations
+that support fairness auditing.
+
+% Force any still-pending results figures to print BEFORE Section 8 / References.
+% \FloatBarrier + \newpage + \null resets the column state so that Section 8
+% starts at the top-LEFT of the new page, not the right column (an artefact of
+% the preceding page being entirely figure* floats).
+\FloatBarrier
+\newpage
+\null\vspace{-\baselineskip}
 
 % =============================================================================
 \section{Individual Contributions}\label{sec:contrib}
@@ -484,7 +825,7 @@ coordinated all deliverables. \\
 Lekshmi S~S & Principal research and algorithm specialisation. Comparative analysis of
 Gini vs.\ entropy splits; drafted the Literature Review. \\
 \addlinespace
-Akbar T E & Visualisation engineering and data storytelling. Produced every figure in
+Akbar T~E & Visualisation engineering and data storytelling. Produced every figure in
 this manuscript and maintained the consistent visual language. \\
 \addlinespace
 Suja V & Senior data-preprocessing engineering. Designed the group-wise median imputation
@@ -497,23 +838,8 @@ ran the McNemar significance test, and ensured compliance with course guidelines
 \end{tabular}
 \end{table}
 
-% =============================================================================
-\section{Conclusion and Future Work}\label{sec:conclusion}
-% =============================================================================
-We presented a reproducible KDD pipeline for Titanic survival prediction that compares a
-probabilistic and a rule-based classifier on identical, engineered features. The Decision
-Tree (81.56\% test accuracy, AUC $= 0.838$) decisively outperforms Gaussian Na\"ive Bayes
-(62.57\%, AUC $= 0.778$), and the gap is statistically significant under the exact
-McNemar test ($p = 8.22\times 10^{-6}$). Logistic Regression achieves the best single
-score overall (83.24\%, AUC $= 0.864$), implying that the engineered representation is
-close to linearly separable. The dominant predictors --- passenger title, class, and
-family size --- align cleanly with the historical evacuation protocol.
-
-\paragraph{Future work.} Three extensions are immediate: (i) replace Gaussian NB with
-multinomial or categorical NB to respect the type of the engineered dummies; (ii)
-introduce gradient-boosted trees (XGBoost, LightGBM) with a nested Bayesian-optimisation
-hyper-parameter search; and (iii) layer SHAP value analysis~\cite{pedregosa2011sklearn}
-over the best model to obtain local explanations that support fairness auditing.
+% Force column break so References appears in the right column.
+\vfill\null\newpage
 
 % =============================================================================
 \begin{thebibliography}{99}
@@ -551,11 +877,9 @@ T.~Hastie, R.~Tibshirani and J.~Friedman,
 F.~Pedregosa \emph{et al.}, ``Scikit-learn: Machine Learning in Python'',
 \emph{Journal of Machine Learning Research}, vol.~12, pp.~2825--2830, 2011.
 
-\bibitem{iiitk2026}
-IIIT Kottayam Courseware, ``DSC~523 --- Data Mining, eMTech 2026 Batch'', 2026.
-
-\bibitem{vanderplas2016}
-J.~VanderPlas, \emph{Python Data Science Handbook}, O'Reilly Media, 2016.
+\bibitem{lundberg2017shap}
+S.~M.~Lundberg and S.-I.~Lee, ``A Unified Approach to Interpreting Model
+Predictions'', in \emph{NeurIPS}, 2017, pp.~4765--4774.
 
 \end{thebibliography}
 

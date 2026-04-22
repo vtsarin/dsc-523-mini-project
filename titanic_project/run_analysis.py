@@ -49,14 +49,22 @@ FIG.mkdir(exist_ok=True)
 plt.style.use("seaborn-v0_8-whitegrid")
 PALETTE = ["#e74c3c", "#2ecc71"]  # died, survived
 sns.set_palette(PALETTE)
+# Bigger baseline fonts so text remains legible after LaTeX scales to column width.
 plt.rcParams.update({
     "figure.dpi": 110,
     "savefig.dpi": 300,
     "savefig.bbox": "tight",
     "font.family": "DejaVu Sans",
-    "axes.titlesize": 13,
-    "axes.labelsize": 11,
-    "legend.fontsize": 10,
+    "font.size": 14,
+    "axes.titlesize": 16,
+    "axes.titleweight": "bold",
+    "axes.labelsize": 14,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "legend.fontsize": 12,
+    "legend.title_fontsize": 13,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
 })
 
 
@@ -82,6 +90,60 @@ print("\nMissing value profile:\n", profile)
 
 class_counts = df["Survived"].value_counts().sort_index()
 surv_rate = df["Survived"].mean()
+
+# ---- Extended profiling statistics for the paper ----
+# Numeric distribution stats (skewness, kurtosis) for each continuous feature
+num_cols = ["Age", "Fare", "SibSp", "Parch"]
+numeric_stats = {}
+for c in num_cols:
+    s = df[c].dropna()
+    numeric_stats[c] = {
+        "mean": float(s.mean()),
+        "median": float(s.median()),
+        "std": float(s.std()),
+        "skew": float(s.skew()),
+        "kurtosis": float(s.kurtosis()),
+        "min": float(s.min()),
+        "max": float(s.max()),
+    }
+
+# Cardinality audit
+cardinality = {c: int(df[c].nunique()) for c in df.columns}
+
+# Missingness pattern for Age: share missing by Pclass
+age_miss_by_class = (df.assign(age_missing=df["Age"].isna())
+                       .groupby("Pclass")["age_missing"].mean().round(4).to_dict())
+
+# Before/after imputation stats for Age
+age_before_mean = float(df["Age"].mean())
+age_before_std = float(df["Age"].std())
+# (post-imputation stats computed below, after `data` is built)
+
+# Chi-squared test: Sex vs Survived
+ct_sex = pd.crosstab(df["Sex"], df["Survived"])
+chi2_sex, p_sex, dof_sex, _ = stats.chi2_contingency(ct_sex)
+# Chi-squared: Pclass vs Survived
+ct_cls = pd.crosstab(df["Pclass"], df["Survived"])
+chi2_cls, p_cls, dof_cls, _ = stats.chi2_contingency(ct_cls)
+# Chi-squared: Embarked vs Survived
+ct_emb = pd.crosstab(df["Embarked"].fillna("S"), df["Survived"])
+chi2_emb, p_emb, dof_emb, _ = stats.chi2_contingency(ct_emb)
+
+# Age group effect (children < 13 vs adults): Mann-Whitney U on survival
+children_surv = df.loc[df["Age"] < 13, "Survived"].dropna()
+adult_surv = df.loc[df["Age"] >= 13, "Survived"].dropna()
+if len(children_surv) > 0 and len(adult_surv) > 0:
+    u_stat, u_p = stats.mannwhitneyu(children_surv, adult_surv, alternative="greater")
+    child_rate = float(children_surv.mean())
+    adult_rate = float(adult_surv.mean())
+else:
+    u_stat, u_p, child_rate, adult_rate = 0.0, 1.0, 0.0, 0.0
+
+# Solo vs family survival
+solo_rate = float(df.loc[df["SibSp"] + df["Parch"] == 0, "Survived"].mean())
+family_rate = float(df.loc[df["SibSp"] + df["Parch"] > 0, "Survived"].mean())
+
+# Title distribution (computed below once `Title` column exists)
 
 # ---------------------------------------------------------------------------
 # 3. Cleaning + feature engineering
@@ -123,6 +185,10 @@ data["FareBin"] = pd.qcut(data["Fare"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
 # Drop raw identifier columns
 data = data.drop(columns=["PassengerId", "Name", "Ticket", "Cabin"])
 
+# Snapshot categorical counts BEFORE one-hot encoding
+title_counts = {str(k): int(v) for k, v in data["Title"].value_counts().items()}
+deck_counts  = {str(k): int(v) for k, v in data["Deck"].value_counts().items()}
+
 # Encode categoricals
 data["Sex"] = data["Sex"].map({"male": 0, "female": 1})
 data = pd.get_dummies(
@@ -138,6 +204,20 @@ for c in data.columns:
 
 print("\nCleaned shape:", data.shape)
 assert data.isna().sum().sum() == 0, "Missing values remain!"
+
+# Age post-imputation stats
+age_after_mean = float(data["Age"].mean())
+age_after_std = float(data["Age"].std())
+
+# Multicollinearity check — look at near-duplicate feature pairs
+corr_all = data.select_dtypes(include=[np.number]).corr().abs()
+high_corr_pairs = []
+cols = corr_all.columns.tolist()
+for i in range(len(cols)):
+    for j in range(i + 1, len(cols)):
+        if corr_all.iloc[i, j] > 0.7:
+            high_corr_pairs.append((cols[i], cols[j], float(corr_all.iloc[i, j])))
+high_corr_pairs.sort(key=lambda t: -t[2])
 
 y = data["Survived"]
 X = data.drop(columns=["Survived"])
@@ -155,42 +235,67 @@ ax.set_ylabel("Passenger count")
 for p in ax.patches:
     ax.annotate(f"{int(p.get_height())}",
                 (p.get_x() + p.get_width() / 2, p.get_height() + 5),
-                ha="center")
+                ha="center", fontsize=14, weight="bold")
 save(fig, "survival_countplot.png")
 
-# (b) Survival by gender
-fig, ax = plt.subplots(figsize=(8, 5))
+# Combined "survival by gender + class" two-panel figure.
+# This replaces the cramped subfigure pair in the paper.
+fig, axes = plt.subplots(1, 2, figsize=(13, 5.5))
 gender_surv = df.groupby("Sex")["Survived"].mean().reset_index()
-sns.barplot(x="Sex", y="Survived", data=gender_surv, ax=ax, palette=["#3498db", "#e91e63"], edgecolor="black")
-ax.set_ylim(0, 1)
-ax.set_title("Survival Rate by Gender")
+sns.barplot(x="Sex", y="Survived", data=gender_surv, ax=axes[0],
+            palette=["#3498db", "#e91e63"], edgecolor="black")
+axes[0].set_ylim(0, 1.05)
+axes[0].set_title("(a) Survival Rate by Gender")
+axes[0].set_ylabel("Survival rate")
+axes[0].set_xlabel("")
+for p in axes[0].patches:
+    axes[0].annotate(f"{p.get_height():.1%}",
+                     (p.get_x() + p.get_width() / 2, p.get_height() + 0.02),
+                     ha="center", weight="bold", fontsize=14)
+
+pclass_surv = df.groupby("Pclass")["Survived"].mean().reset_index()
+sns.barplot(x="Pclass", y="Survived", data=pclass_surv, ax=axes[1],
+            palette="viridis", edgecolor="black")
+axes[1].set_ylim(0, 1.05)
+axes[1].set_title("(b) Survival Rate by Passenger Class")
+axes[1].set_ylabel("Survival rate")
+axes[1].set_xlabel("Passenger class")
+for p in axes[1].patches:
+    axes[1].annotate(f"{p.get_height():.1%}",
+                     (p.get_x() + p.get_width() / 2, p.get_height() + 0.02),
+                     ha="center", weight="bold", fontsize=14)
+plt.tight_layout()
+save(fig, "survival_gender_class_panel.png")
+
+# Keep individual versions too (used in notebook, not paper)
+fig, ax = plt.subplots(figsize=(8, 5))
+sns.barplot(x="Sex", y="Survived", data=gender_surv, ax=ax,
+            palette=["#3498db", "#e91e63"], edgecolor="black")
+ax.set_ylim(0, 1.05); ax.set_title("Survival Rate by Gender")
 ax.set_ylabel("Survival rate")
 for p in ax.patches:
     ax.annotate(f"{p.get_height():.1%}",
                 (p.get_x() + p.get_width() / 2, p.get_height() + 0.02),
-                ha="center", weight="bold")
+                ha="center", weight="bold", fontsize=14)
 save(fig, "survival_by_gender.png")
 
-# (c) Survival by Pclass
 fig, ax = plt.subplots(figsize=(8, 5))
-pclass_surv = df.groupby("Pclass")["Survived"].mean().reset_index()
-sns.barplot(x="Pclass", y="Survived", data=pclass_surv, ax=ax, palette="viridis", edgecolor="black")
-ax.set_ylim(0, 1)
-ax.set_title("Survival Rate by Passenger Class")
-ax.set_ylabel("Survival rate")
-ax.set_xlabel("Passenger class")
+sns.barplot(x="Pclass", y="Survived", data=pclass_surv, ax=ax,
+            palette="viridis", edgecolor="black")
+ax.set_ylim(0, 1.05); ax.set_title("Survival Rate by Passenger Class")
+ax.set_ylabel("Survival rate"); ax.set_xlabel("Passenger class")
 for p in ax.patches:
     ax.annotate(f"{p.get_height():.1%}",
                 (p.get_x() + p.get_width() / 2, p.get_height() + 0.02),
-                ha="center", weight="bold")
+                ha="center", weight="bold", fontsize=14)
 save(fig, "survival_by_class.png")
 
-# (d) Pclass x Gender interaction
-fig, ax = plt.subplots(figsize=(9, 5.5))
+# (d) Pclass x Gender interaction (stand-alone, used in paper)
+fig, ax = plt.subplots(figsize=(10, 6))
 ct = df.groupby(["Pclass", "Sex"])["Survived"].mean().reset_index()
 sns.barplot(x="Pclass", y="Survived", hue="Sex", data=ct, ax=ax,
             palette=["#3498db", "#e91e63"], edgecolor="black")
-ax.set_ylim(0, 1)
+ax.set_ylim(0, 1.08)
 ax.set_title("Survival Rate by Class and Gender")
 ax.set_ylabel("Survival rate")
 ax.set_xlabel("Passenger class")
@@ -199,8 +304,8 @@ for p in ax.patches:
     if h > 0:
         ax.annotate(f"{h:.1%}",
                     (p.get_x() + p.get_width() / 2, h + 0.02),
-                    ha="center", fontsize=9)
-ax.legend(title="Sex")
+                    ha="center", fontsize=13, weight="bold")
+ax.legend(title="Sex", loc="upper right")
 save(fig, "survival_by_class_gender.png")
 
 # (e) Age distribution
@@ -227,15 +332,52 @@ ax.set_ylabel("Count")
 ax.legend()
 save(fig, "fare_distribution.png")
 
+# Combined two-panel figure used in the paper — Age hist (left) + Fare hist (right),
+# both overlaid by survival. Supports EDA sections 5.1.5 and 5.1.6.
+# Source size kept compact so adding this figure doesn't push the paper past 9 pages.
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.0))
+
+# Left panel: Age distribution
+age_bins = np.arange(0, 85, 4)
+for label, color, lbl in zip([0, 1], PALETTE, ["Died", "Survived"]):
+    subset = df[df["Survived"] == label]["Age"].dropna()
+    axes[0].hist(subset, bins=age_bins, alpha=0.65, label=lbl,
+                 color=color, edgecolor="black", linewidth=0.6)
+axes[0].axvline(13, color="#2c3e50", linestyle="--", linewidth=1.3, alpha=0.7)
+axes[0].text(13.5, axes[0].get_ylim()[1] * 0.95, "age 13",
+             fontsize=10, color="#2c3e50", va="top")
+axes[0].set_title("(a) Age Distribution by Survival")
+axes[0].set_xlabel("Age (years)")
+axes[0].set_ylabel("Passenger count")
+axes[0].legend(loc="upper right")
+
+# Right panel: Fare distribution (log-scaled)
+fare_bins = np.linspace(0, np.log1p(df["Fare"].max()) + 0.3, 30)
+for label, color, lbl in zip([0, 1], PALETTE, ["Died", "Survived"]):
+    subset = np.log1p(df[df["Survived"] == label]["Fare"].dropna())
+    axes[1].hist(subset, bins=fare_bins, alpha=0.65, label=lbl,
+                 color=color, edgecolor="black", linewidth=0.6)
+axes[1].set_title("(b) Fare Distribution by Survival (log-scaled)")
+axes[1].set_xlabel(r"$\log(1 + \mathrm{Fare})$")
+axes[1].set_ylabel("Passenger count")
+axes[1].legend(loc="upper right")
+
+plt.tight_layout(pad=0.4, w_pad=1.5)
+save(fig, "age_fare_by_survival.png")
+
 # (g) Correlation heatmap
-fig, ax = plt.subplots(figsize=(12, 9))
+fig, ax = plt.subplots(figsize=(10, 8.5))
 numeric_cols = ["Survived", "Pclass", "Age", "SibSp", "Parch", "Fare"]
 extra = data.copy()
 extra["Sex_female"] = extra["Sex"]
 corr = pd.concat([df[numeric_cols], extra[["Sex_female", "FamilySize", "IsAlone"]]], axis=1).corr()
 sns.heatmap(corr, annot=True, fmt=".2f", cmap="RdBu_r", center=0,
-            square=True, cbar_kws={"shrink": 0.8}, ax=ax)
-ax.set_title("Pearson Correlation Matrix")
+            square=True, cbar_kws={"shrink": 0.75}, ax=ax,
+            annot_kws={"size": 12, "weight": "bold"},
+            linewidths=0.4, linecolor="white")
+ax.set_title("Pearson Correlation Matrix", pad=14)
+plt.setp(ax.get_xticklabels(), rotation=35, ha="right")
+plt.setp(ax.get_yticklabels(), rotation=0)
 save(fig, "correlation_heatmap.png")
 
 # (h) Embarked
@@ -273,14 +415,18 @@ family_df = df.copy()
 family_df["FamilySize"] = family_df["SibSp"] + family_df["Parch"] + 1
 fs = family_df.groupby("FamilySize")["Survived"].agg(["mean", "count"]).reset_index()
 bars = ax.bar(fs["FamilySize"], fs["mean"], color="#2980b9", edgecolor="black")
-ax.set_ylim(0, 1)
+ax.set_ylim(0, 1.02)
 ax.set_title("Survival Rate by Family Size")
 ax.set_xlabel("Family size (SibSp + Parch + 1)")
 ax.set_ylabel("Survival rate")
-for bar, n in zip(bars, fs["count"]):
+ax.set_xticks(fs["FamilySize"])
+for bar, n, m in zip(bars, fs["count"], fs["mean"]):
+    ax.annotate(f"{m:.0%}",
+                (bar.get_x() + bar.get_width() / 2, m + 0.04),
+                ha="center", weight="bold", fontsize=12)
     ax.annotate(f"n={n}",
-                (bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02),
-                ha="center", fontsize=9)
+                (bar.get_x() + bar.get_width() / 2, m + 0.005),
+                ha="center", fontsize=10, color="#555")
 save(fig, "family_size_survival.png")
 
 # ---------------------------------------------------------------------------
@@ -374,28 +520,49 @@ for name, (model, needs_scale) in models.items():
     print(f"\n=== {name} ===")
     print(classification_report(y_test, y_pred, digits=4))
 
-# Confusion matrices — separate for NB and DT
+# Confusion matrices — compact panel sized for single-column rendering.
+# Source is ~6.5 x 3 in; LaTeX scales it to column width ~3.4 in (scale 0.52),
+# keeping the 16 pt cell numbers legible at ~8 pt in the printed PDF.
+fig, axes = plt.subplots(1, 2, figsize=(6.5, 3.0))
+for ax, name in zip(axes, ["Naive Bayes", "Decision Tree"]):
+    cm = np.array(results[name]["cm"])
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=["Died", "Survived"])
+    disp.plot(cmap="Blues", ax=ax, colorbar=False, values_format="d")
+    ax.set_title(name, pad=5, fontsize=11, weight="bold")
+    ax.set_xlabel("Predicted", fontsize=9)
+    ax.set_ylabel("True", fontsize=9)
+    ax.tick_params(axis="both", labelsize=8)
+    for text in ax.texts:
+        text.set_fontsize(16)
+        text.set_fontweight("bold")
+plt.tight_layout(pad=0.4)
+save(fig, "confusion_matrices_panel.png")
+
 for name, fname in [("Naive Bayes", "confusion_matrix_nb.png"),
                     ("Decision Tree", "confusion_matrix_dt.png")]:
-    fig, ax = plt.subplots(figsize=(5.5, 5))
+    fig, ax = plt.subplots(figsize=(6, 5.5))
     cm = np.array(results[name]["cm"])
     disp = ConfusionMatrixDisplay(confusion_matrix=cm,
                                   display_labels=["Died", "Survived"])
     disp.plot(cmap="Blues", ax=ax, colorbar=False, values_format="d")
     ax.set_title(f"Confusion Matrix — {name}")
+    for text in ax.texts:
+        text.set_fontsize(20); text.set_fontweight("bold")
     save(fig, fname)
 
 # ROC curves
-fig, ax = plt.subplots(figsize=(8, 7))
+fig, ax = plt.subplots(figsize=(9, 7))
 colors = {"Naive Bayes": "#e67e22", "Decision Tree": "#27ae60",
           "Logistic Regression": "#2980b9", "Random Forest": "#8e44ad"}
 for name, (fpr, tpr, a) in roc_data.items():
-    ax.plot(fpr, tpr, color=colors[name], lw=2.2, label=f"{name} (AUC = {a:.3f})")
-ax.plot([0, 1], [0, 1], linestyle="--", color="gray", alpha=0.6)
+    ax.plot(fpr, tpr, color=colors[name], lw=2.6, label=f"{name} (AUC = {a:.3f})")
+ax.plot([0, 1], [0, 1], linestyle="--", color="gray", alpha=0.6, lw=1.5)
 ax.set_xlabel("False Positive Rate")
 ax.set_ylabel("True Positive Rate")
 ax.set_title("ROC Curves — Model Comparison")
-ax.legend(loc="lower right")
+ax.legend(loc="lower right", frameon=True, fancybox=True)
+ax.set_xlim(-0.01, 1.0); ax.set_ylim(0, 1.02)
 save(fig, "roc_curves.png")
 
 # Feature importance (DT + RF)
@@ -405,24 +572,33 @@ feat_names = X.columns
 dt_imp = pd.Series(dt_model.feature_importances_, index=feat_names).sort_values(ascending=False).head(12)
 rf_imp = pd.Series(rf_model.feature_importances_, index=feat_names).sort_values(ascending=False).head(12)
 
-fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-dt_imp.iloc[::-1].plot.barh(ax=axes[0], color="#27ae60", edgecolor="black")
-axes[0].set_title("Decision Tree — Top 12 Feature Importances")
+# Vertically stacked so that at half-textwidth rendering the two panels share
+# the full column with plenty of room for feature-name labels. Aspect ~1.0
+# matches the ROC figure so both look balanced side-by-side in the paper.
+fig, axes = plt.subplots(2, 1, figsize=(8.5, 7))
+dt_imp.head(10).iloc[::-1].plot.barh(ax=axes[0], color="#27ae60", edgecolor="black")
+axes[0].set_title("Decision Tree — Top 10 Features", fontsize=13, weight="bold", pad=4)
 axes[0].set_xlabel("Gini importance")
-rf_imp.iloc[::-1].plot.barh(ax=axes[1], color="#8e44ad", edgecolor="black")
-axes[1].set_title("Random Forest — Top 12 Feature Importances")
+rf_imp.head(10).iloc[::-1].plot.barh(ax=axes[1], color="#8e44ad", edgecolor="black")
+axes[1].set_title("Random Forest — Top 10 Features", fontsize=13, weight="bold", pad=4)
 axes[1].set_xlabel("Mean decrease impurity")
-plt.tight_layout()
+for ax in axes:
+    ax.tick_params(axis="y", labelsize=11)
+    ax.tick_params(axis="x", labelsize=10)
+plt.tight_layout(pad=0.3, h_pad=1.0)
 save(fig, "feature_importance.png")
 
-# Decision tree visualization (shallow version for readability)
+# Decision tree visualisation (shallow version for readability).
+# Paper embeds this as a full-width figure* and uses this as a hero visual
+# on the results page.
 dt_shallow = DecisionTreeClassifier(max_depth=3, random_state=RANDOM_STATE).fit(X_train, y_train)
-fig, ax = plt.subplots(figsize=(18, 9))
+fig, ax = plt.subplots(figsize=(14, 6))
 plot_tree(
     dt_shallow, feature_names=feat_names, class_names=["Died", "Survived"],
-    filled=True, rounded=True, fontsize=9, ax=ax,
+    filled=True, rounded=True, fontsize=10, ax=ax,
+    impurity=True, proportion=False,
 )
-ax.set_title("Decision Tree Structure (max_depth = 3 for readability)")
+fig.tight_layout(pad=0.3)
 save(fig, "decision_tree_viz.png")
 
 # McNemar's test: NB vs DT (exact binomial form)
@@ -480,6 +656,28 @@ out = {
     "best_model": max(results, key=lambda k: results[k]["test_accuracy"]),
     "dt_top_features": dt_imp.to_dict(),
     "rf_top_features": rf_imp.to_dict(),
+    "numeric_stats": numeric_stats,
+    "cardinality": cardinality,
+    "age_missing_by_class": age_miss_by_class,
+    "age_imputation": {
+        "before_mean": age_before_mean, "before_std": age_before_std,
+        "after_mean": age_after_mean, "after_std": age_after_std,
+    },
+    "chi2_tests": {
+        "sex_vs_survived":       {"chi2": float(chi2_sex), "p": float(p_sex), "dof": int(dof_sex)},
+        "pclass_vs_survived":    {"chi2": float(chi2_cls), "p": float(p_cls), "dof": int(dof_cls)},
+        "embarked_vs_survived":  {"chi2": float(chi2_emb), "p": float(p_emb), "dof": int(dof_emb)},
+    },
+    "child_vs_adult_survival": {
+        "child_rate": child_rate, "adult_rate": adult_rate,
+        "mann_whitney_u": float(u_stat), "p": float(u_p),
+        "n_children": int((df["Age"] < 13).sum()),
+        "n_adults":   int((df["Age"] >= 13).sum()),
+    },
+    "solo_vs_family_survival": {"solo": solo_rate, "family": family_rate},
+    "title_counts": title_counts,
+    "deck_counts": deck_counts,
+    "multicollinear_pairs": high_corr_pairs[:10],
 }
 
 with open(BASE / "results.json", "w") as f:
