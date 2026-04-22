@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# LaTeX build artefacts (keep the .pdf — it is a deliverable)
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
