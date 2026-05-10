@@ -164,9 +164,10 @@ a well-documented historical record.
   place their performance in the context of linear and ensemble alternatives.
 \end{enumerate}
 
-\paragraph{Paper organisation.} Section~\ref{sec:litreview} reviews the theoretical
-foundations of Bayesian and decision-tree classification. Section~\ref{sec:dataset}
-describes the dataset. Section~\ref{sec:method} details the preprocessing, feature
+\paragraph{Paper organisation.} Section~\ref{sec:litreview} surveys prior machine
+learning work on the Titanic benchmark, the theoretical foundations of Na\"ive Bayes
+and decision-tree classification, and the research gap this paper addresses.
+Section~\ref{sec:dataset} describes the dataset. Section~\ref{sec:method} details the preprocessing, feature
 engineering, and evaluation protocol. Section~\ref{sec:results} presents the results,
 including the comparative summary, confusion matrices, and feature importances.
 Section~\ref{sec:implications} discusses implications, Section~\ref{sec:conclusion}
@@ -176,9 +177,33 @@ concludes, and Section~\ref{sec:contrib} lists individual contributions.
 \section{Literature Review}\label{sec:litreview}
 % =============================================================================
 
-\subsection{Bayesian classification}
-The Na\"ive Bayes classifier assigns a test instance $X = (x_1, \dots, x_n)$ to the class
-$C^\star = \arg\max_{C_k} P(C_k \mid X)$. Bayes' theorem transforms this into
+\subsection{Machine learning for Titanic survival prediction}
+The Titanic dataset has been studied extensively as a benchmark for supervised
+classification. Hundreds of public notebooks and pedagogical write-ups have applied a
+wide range of algorithms, from simple linear models to ensemble methods, typically
+reaching the 78--85\,\% accuracy range when the validation protocol is
+honest~\cite{kaggle_titanic,hastie2009esl}. Higher reported scores almost invariably
+stem from test-set leakage --- often the unintentional use of the unlabelled
+\texttt{test.csv} for training --- or from hyper-parameter tuning against the public
+leaderboard. We treat any result materially above this band with scepticism, and
+evaluate on a single fixed 80/20 stratified split with a separate 10-fold
+cross-validation estimate on the training fold to quantify sampling variability.
+
+Logistic Regression remains the most common baseline thanks to its simplicity and
+interpretability, performing competitively when paired with appropriate feature
+engineering on variables such as gender, class, age, and family
+size~\cite{pedregosa2011sklearn}. Ensemble methods such as Random Forest reduce variance
+through bagging~\cite{breiman1984} and frequently dominate Kaggle leaderboards. Among
+purely pedagogical comparisons, however, the two models most often contrasted remain
+Na\"ive Bayes and Decision Trees --- the focus of the present study. We therefore
+include Logistic Regression and Random Forest as supplementary baselines
+(Section~\ref{sec:results}) so that the primary NB-vs.-DT comparison is anchored
+against both a strong linear and a strong ensemble alternative.
+
+\subsection{Na\"ive Bayes classifier}
+The Na\"ive Bayes classifier is a probabilistic model that assigns a test instance
+$X = (x_1,\dots,x_n)$ to the class $C^\star = \arg\max_{C_k} P(C_k\mid X)$, where Bayes'
+theorem rewrites the posterior as
 \begin{equation}\label{eq:bayes}
 P(C_k \mid X) \; = \; \frac{P(X \mid C_k)\, P(C_k)}{P(X)} .
 \end{equation}
@@ -188,39 +213,61 @@ the \emph{class-conditional independence} assumption is invoked:
 P(X \mid C_k) \; \approx \; \prod_{i=1}^n P(x_i \mid C_k) .
 \end{equation}
 For continuous features, $P(x_i\mid C_k)$ is modelled as a univariate Gaussian, yielding
-the \emph{Gaussian} Na\"ive Bayes estimator used here. The chief strengths of the model
-are its closed-form maximum-likelihood estimator, constant-time training, and stable
-behaviour on small samples~\cite{mitchell1997ml}. Its weakness is that
-Equation~\eqref{eq:nb_independence} rarely holds in practice; correlated features cause
-the evidence terms to compound and distort the posterior.
+the \emph{Gaussian} Na\"ive Bayes estimator used in this study. Its strengths are
+closed-form maximum-likelihood estimation, constant-time training, and stable behaviour
+on small samples~\cite{mitchell1997ml}. Its weakness is that
+Equation~\eqref{eq:nb_independence} rarely holds in practice: correlated features cause
+the per-feature evidence terms to compound, inflating the posterior away from its true
+value~\cite{han2011data}.
 
-\subsection{Decision-tree induction}
-Decision-tree learners partition the feature space recursively, choosing the split at
-each node that maximises class purity. Two common impurity measures are
+This weakness is consequential on the Titanic dataset. Engineered features such as
+\texttt{FamilySize}, \texttt{IsAlone}, the one-hot \texttt{Title} dummies, and
+\texttt{Pclass}--\texttt{Deck} pairs are strongly correlated by construction
+(Section~\ref{sec:eda}), violating Equation~\eqref{eq:nb_independence} directly. We
+revisit this failure mode quantitatively in Section~\ref{sec:results}.
+
+\subsection{Decision-tree models}
+Decision-tree learners partition the feature space recursively by selecting, at each
+node, the split that maximises class purity. Two common impurity measures are
 \begin{align}
 \text{Gini}(D)    &= 1 - \sum_{i=1}^{m} p_i^2, \label{eq:gini}\\
 \text{Entropy}(D) &= -\sum_{i=1}^{m} p_i \log_2 p_i, \label{eq:entropy}
 \end{align}
-where $p_i$ denotes the proportion of class $i$ in partition $D$. CART~\cite{breiman1984}
-uses Gini while C4.5 / ID3~\cite{quinlan1986} use information gain, defined as the
-reduction in entropy induced by a candidate split. Both are computed under a greedy
-top-down scheme and, without regularisation, are prone to overfit. Two standard remedies
-are \emph{pre-pruning} via a maximum-depth hyper-parameter and \emph{post-pruning} via
-cost-complexity minimisation, in which a tree $T_\alpha$ is chosen to minimise
-$R_\alpha(T) = R(T) + \alpha\,|T|$.
+where $p_i$ denotes the proportion of class $i$ in partition $D$.
+CART~\cite{breiman1984} uses Gini; ID3 and C4.5~\cite{quinlan1986} use information gain
+(the reduction in entropy induced by a candidate split). Both are computed under a
+greedy top-down scheme and, without regularisation, are prone to overfit. The standard
+remedies are \emph{pre-pruning} via a maximum-depth hyper-parameter and
+\emph{post-pruning} via cost-complexity minimisation, in which a tree $T_\alpha$
+minimises $R_\alpha(T) = R(T) + \alpha\,|T|$.
 
-Rule-based learners are interpretable, scale invariant, and agnostic to feature
-correlations --- three properties that partly compensate for their higher
-variance~\cite{han2011data}.
+Decision-tree models handle numerical and categorical inputs natively, are scale
+invariant, and are agnostic to feature correlations~\cite{han2011data} --- properties
+that make them well suited to engineered tabular data of the kind we construct here, and
+that partially compensate for their higher variance compared with linear or
+probabilistic alternatives.
 
-\subsection{Related work on the Titanic benchmark}
-Hundreds of public notebooks have reported classification accuracy on this dataset. Most
-serious efforts~\cite{kaggle_titanic,hastie2009esl} fall in the 78--85\% range when the
-hold-out protocol is honest, with higher scores typically arising from either test-set
-leakage or hyper-parameter tuning on the public leaderboard. Results materially above
-this band should be treated with scepticism. We therefore evaluate on a single fixed
-80/20 split with a separate 10-fold CV estimate on the training fold, and report both
-the mean and standard deviation of CV accuracy to quantify sampling variability.
+\subsection{Research gap}
+Despite the abundance of Titanic-classifier write-ups, comparatively few present a
+\emph{controlled head-to-head} between a probabilistic classifier such as Na\"ive Bayes
+and a rule-based classifier such as a Decision Tree under an identical preprocessing
+and feature-engineering pipeline. Many implementations treat correlated and engineered
+variables as inputs without explicitly examining how those variables interact with each
+model's underlying assumptions --- particularly the conditional-independence assumption
+central to Na\"ive Bayes. As a result, the mechanism by which a single
+feature-engineering decision can help one model family while degrading another is
+rarely articulated on this benchmark.
+
+\subsection{Motivation of this work}
+This study addresses the above gap with three commitments. First, all four classifiers
+are trained on \emph{identical} preprocessed and engineered features, so observed
+performance differences cannot be attributed to disparate inputs. Second, Logistic
+Regression and Random Forest are included as supplementary baselines to place the
+primary NB-vs.-DT comparison in the wider context of linear and ensemble alternatives.
+Third, model assumptions are explicitly tested against the data: the multicollinearity
+introduced by one-hot dummies is measured in Section~\ref{sec:eda} and traced back to
+NB's degraded posterior in Section~\ref{sec:results}. The goal is not simply to report
+which model wins, but to explain \emph{why} on this dataset.
 
 % =============================================================================
 \section{Dataset Description}\label{sec:dataset}
